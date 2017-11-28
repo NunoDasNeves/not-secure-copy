@@ -17,6 +17,8 @@
 #define DEFAULT_IP "127.0.0.1"
 #define DEFAULT_PORT 1337
 
+int nscp_args(int argc, char ** argv, char ** file, char **ip, int * port);
+
 int main(int argc, char ** argv) {
 
     char * file = NULL;
@@ -83,7 +85,34 @@ int nscp_args(int argc, char ** argv, char ** file, char **ip, int * port) {
     };
 
     error_t arg_parser(int key, char *arg, struct argp_state *state) {
-        
+        // return ARG_ERR_UNKNOWN
+        int sender = 2;
+        switch(key){
+            case 's':
+                if (!sender) {
+                    return ARG_ERR_UNKNOWN;
+                }
+                sender = 1;
+                break;
+            case 'r':
+                if (sender == 1) {
+                    return ARG_ERR_UNKNOWN;
+                }
+                sender = 0;
+                break;
+            case 'f':
+                *file = arg;
+                break;
+            case 'i':
+                *ip = arg;
+                break;
+            case 'p':
+                *port = atoi(arg);
+                break;
+            default:
+                return ARG_ERR_UNKNOWN;
+        }
+        return 0;
     };
 
     struct the_argp = {
