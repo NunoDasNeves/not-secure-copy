@@ -96,16 +96,19 @@ int nscp_send(char * file, char * ip, char * port) {
 			perror("header");
 			return 1;
 		}
+		curr_to_send -= curr_sent;
 	}
+	printf("done sending header\n");
 
 	// send filename
 	size_t left_to_send = filenamelen;
 	curr_to_send = filenamelen > MAX_MTU ? MAX_MTU : filenamelen;
 	char * filenameptr = file;
+	printf("sending name \"%s\"\n", filenameptr);
 	while (curr_to_send) {
 		curr_sent = send(sock, (const void *)filenameptr, curr_to_send, 0);
 		if (curr_sent == -1) {
-			fprintf(stderr, "error sending filename\n");
+			perror("send filename");
 			return 1;
 		}
 		filenameptr += curr_sent;
@@ -210,6 +213,7 @@ int nscp_receive(char * port) {
 		perror("listen");
 		exit(1);
 	}
+	printf("listening...\n");
 	
 	struct sockaddr_storage their_addr;
 	socklen_t sin_size;
@@ -227,6 +231,7 @@ int nscp_receive(char * port) {
 				s, sizeof(s));
 		printf("server: got connection from %s\n", s);
 		if (!fork()) { // this is the child process
+			printf("child process handling connection\n");
 			close(sock); // child doesn't need the listener
 
 			// receive the data, parse all that shiz and save it to a file
@@ -244,6 +249,8 @@ int nscp_receive(char * port) {
 			}
 			// convert to host byte order
 			for (int i = 0; i < 2; ++i) header[i] = ntohl(header[i]);
+
+			printf("filenamesize = %u, filesize = %u\n", header[0], header[1]);
 			
 			// receive file name
 			// need a buffer for it
@@ -252,7 +259,6 @@ int nscp_receive(char * port) {
 				perror("malloc");
 				exit(0);
 			}
-			printf("saving file \"%s\" from sender\n", filename);
 			// pointer in case it takes multiple recvs
 			char * filenameptr = filename;
 			left_to_receive = header[0];
@@ -262,12 +268,15 @@ int nscp_receive(char * port) {
 					fprintf(stderr, "client closed connection!\n");
 					exit(0);
 				}
+				printf("got %u bytes for filename\n", amount_received);
+				printf("got \"%s\" from sender\n", filenameptr);
 				left_to_receive -= amount_received;
-				filenameptr += left_to_receive;
+				filenameptr += amount_received;
 			}
+			printf("saving file \"%s\" from sender\n", filename);
 
 			// open file to write to
-			int fd = open(filename, O_WRONLY|O_CREAT);
+			int fd = open(filename, O_WRONLY|O_CREAT, 0600);
 			if (fd<0) {
 				perror("open");
 				exit(0);
