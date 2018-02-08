@@ -16,5 +16,9 @@ nscp.o: nscp.c nscp.h
 
 options.o: options.c nscp.h
 
+sender.o: sender.c nscp.h
+
+receiver.o: receiver.c nscp.h
+
 clean:
 	rm -f $(BINS) *.o
