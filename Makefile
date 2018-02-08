@@ -4,14 +4,17 @@ BINDIR=bin
 CC=gcc
 CFLAGS=-Wall -Werror
 BINS=nscp
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
 
 all: $(BINS)
 
-nscp: nscp.o
-	$(CC) $(CFLAGS) -o nscp nscp.o
+nscp: $(OBJS)
+	$(CC) $(CFLAGS) -o nscp $(OBJS)
 
 nscp.o: nscp.c nscp.h
-	$(CC) -c $(CFLAGS) nscp.c
+
+options.o: options.c nscp.h
 
 clean:
 	rm -f $(BINS) *.o
