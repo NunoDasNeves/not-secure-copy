@@ -20,29 +20,29 @@
 
 #include "nscp.h"
 /*
- -s
- -r
- -i (send only)
- -p
- -f (send required)
- */
+   -s
+   -r
+   -i (send only)
+   -p
+   -f (send required)
+   */
 
 int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port) {
     struct argp_option options[6] = {
         {
-            "send",             // name
-            (int)'s',           // char
-            NULL,               // arg
-            0,                  // flags
-            "Use this to send", // doc
-            0                   // group
+            "send",                                 // name
+            (int)'s',                               // char
+            NULL,                                   // arg
+            0,                                      // flags
+            "Send a file to a waiting receiver",    // doc
+            0                                       // group
         },
         {
             "receive",
             (int)'r',
             NULL,
             0,
-            "Use this to receive",
+            "Wait to receive one or more files from one or more senders",
             0
         },
         {
@@ -50,7 +50,7 @@ int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port) {
             (int)'f',
             "FILENAME",
             0,
-            "The file to send",
+            "The file to send. Only valid with -s",
             0
         },
         {
@@ -58,7 +58,7 @@ int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port) {
             (int)'i',
             "IP_ADDRESS",
             0,
-            "The ip to send to",
+            "The ip to send to. Only valid with -s",
             0
         },
         {
@@ -69,21 +69,25 @@ int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port) {
             "The port send to or receive on",
             0
         },
-		{0}	// zero entry to terminate the vector
+        {0}	// zero entry to terminate the vector
     };
+
+    int sender = 2;
 
     error_t arg_parser(int key, char *arg, struct argp_state *state) {
 
         switch(key){
             case 's':
-                if (!sender) {
-                    return ARGP_ERR_UNKNOWN;
+                if (sender == 0) {
+                    fprintf(stderr, "-s and -r are mutually exclusive!");
+                    return EINVAL;
                 }
                 sender = 1;
                 break;
             case 'r':
                 if (sender == 1) {
-                    return ARGP_ERR_UNKNOWN;
+                    fprintf(stderr, "-s and -r are mutually exclusive!");
+                    return EINVAL;
                 }
                 sender = 0;
                 break;
@@ -106,22 +110,30 @@ int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port) {
         options,
         arg_parser,
         NULL,           // args_doc
-        "nscp\n\
-         not secure copy\n\
-         \v\
-         e.g. on one machine,\n\
-         nscp -s -f myfile -i 192.168.0.5 -p 9001\n\
-         ",
-		 NULL,
-		 NULL,
-		 NULL
+        "nscp\n"
+            "Not secure copy. Utility for copying files across the internet.\n"
+            "Use -s to send or -r to receive files."
+            "\v"
+            "e.g. Send \"myfile\" to a receiver listening on port 9001 at 192.168.0.5\n"
+            "nscp -s -f myfile -i 192.168.0.5 -p 9001\n"
+            "\n"
+            "e.g. Listen for and receive files on port 9001\n"
+            "nscp -r -p 9001\n",
+        NULL,
+        NULL,
+        NULL
     };
 
-	unsigned arg_flags = 0;
+    unsigned arg_flags = 0;
 
     if(argp_parse((const struct argp *)&the_argp, argc, argv, arg_flags, NULL, NULL)) {
-        return 1;
+        return -1;
     }
 
-	return 0;
+    if (sender == 2) {
+        fprintf(stderr, "Please use -s or -r to specify sender or receiver\n");
+        argp_help((const struct argp *)&the_argp, stderr, ARGP_HELP_USAGE, "");
+    }
+
+    return sender;
 }

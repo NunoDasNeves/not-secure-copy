@@ -20,26 +20,23 @@
 
 #include "nscp.h"
 
-int sender = 2;
-
 int main(int argc, char ** argv) {
 
-    char * file = NULL;
+
+    char * filename = NULL;
     char * ip = DEFAULT_IP;
     char * port = DEFAULT_PORT;
 
-    if (nscp_args(argc, argv, &file, &ip, &port)) {
-        return 1;
-    }
+    int sender = nscp_args(argc, argv, &filename, &ip, &port);
 
     // send stuff
     if (sender == 1) {
-        if (!file) {
+        if (!filename) {
             printf("please specify a filename with -f\n");
             return 1;
         }
 
-        if (nscp_send(file, ip, port)) {
+        if (nscp_send(filename, ip, port)) {
             printf ("send failed!\n");
             return 1;
         }
@@ -53,7 +50,6 @@ int main(int argc, char ** argv) {
         }
 
     } else {
-        printf("please use -s or -r to specify sender or receiver\n");
         return 1;
     }
 

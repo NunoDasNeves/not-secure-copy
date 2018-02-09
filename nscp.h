@@ -10,8 +10,6 @@
 
 #define MAX_MTU 4096
 
-extern int sender;
-
 int nscp_args(int argc, char ** argv, char ** file, char **ip, char **port);
 
 int nscp_send(char * file, char * ip, char * port);
